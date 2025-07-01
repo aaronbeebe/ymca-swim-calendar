@@ -7,7 +7,7 @@ import os
 import pytz
 
 
-EVENT_TYPES = {
+EVENT_TYPE = {
     "1206": "Large Pool",       
     "1201": "Small Pool"    
 }
