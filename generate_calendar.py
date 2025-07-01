@@ -21,7 +21,9 @@ for week_offset in range(4):
     soup = BeautifulSoup(response.text, "html.parser")
 
     for div in soup.find_all("div", class_=re.compile(r"internal-event-day-\d{2}-\d{2}-\d{4}")):
-        date_match = re.search(r"internal-event-day-(\d{2})-(\d{2})-(\d{4})", div["class"][1])
+        full_class_string = " ".join(div.get("class", []))
+        date_match = re.search(r"internal-event-day-(\d{2})-(\d{2})-(\d{4})", full_class_string)
+
         if not date_match:
             continue
         day, month, year = date_match.groups()
