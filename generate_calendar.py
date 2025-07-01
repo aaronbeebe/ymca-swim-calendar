@@ -55,6 +55,6 @@ os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
 
 # Write to .ics
 with open(OUTPUT_FILE, "w") as f:
-    f.writelines(calendar)
+    f.write(calendar.serialize())
 
 print(f"✅ Saved {len(calendar.events)} events to {OUTPUT_FILE}")
