@@ -1,0 +1,21 @@
+# generate_calendar.py
+from ics import Calendar, Event
+from datetime import datetime, timedelta
+
+# Placeholder: replace with actual scraping logic
+swim_times = [
+    {"title": "Lap Swim", "start": "2025-07-02 07:00", "duration_minutes": 60},
+    {"title": "Family Swim", "start": "2025-07-02 12:00", "duration_minutes": 45},
+]
+
+calendar = Calendar()
+
+for slot in swim_times:
+    e = Event()
+    e.name = slot["title"]
+    e.begin = datetime.strptime(slot["start"], "%Y-%m-%d %H:%M")
+    e.duration = timedelta(minutes=slot["duration_minutes"])
+    calendar.events.add(e)
+
+with open("docs/swim.ics", "w") as f:
+    f.writelines(calendar)
