@@ -4,11 +4,14 @@ from ics import Calendar, Event
 from datetime import datetime, timedelta
 import re
 import os
+import pytz
+
 
 BASE_URL = "https://prospect-park-ymca.virtuagym.com/classes/week/{date_str}?event_type=1206&embedded=1&pref_club=42693"
 OUTPUT_FILE = "docs/swim.ics"
 
 calendar = Calendar()
+eastern = pytz.timezone("America/New_York")
 
 # Loop over 4 weeks ahead
 for week_offset in range(4):
@@ -39,8 +42,9 @@ for week_offset in range(4):
 
         try:
             start_time_str, end_time_str = [t.strip() for t in time_range.split("-")]
-            start_dt = datetime.strptime(f"{event_date} {start_time_str}", "%Y-%m-%d %I:%M %p")
-            end_dt = datetime.strptime(f"{event_date} {end_time_str}", "%Y-%m-%d %I:%M %p")
+            start_dt = eastern.localize(datetime.strptime(f"{event_date} {start_time_str}", "%Y-%m-%d %I:%M %p"))
+            end_dt = eastern.localize(datetime.strptime(f"{event_date} {end_time_str}", "%Y-%m-%d %I:%M %p"))
+
         except ValueError:
             continue  # Skip malformed times
 
