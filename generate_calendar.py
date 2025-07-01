@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import re
 import os
 
-URL = "https://ymcanyc.org/locations/prospect-park-ymca/schedules#swim"
+URL = "https://prospect-park-ymca.virtuagym.com/classes/week/2025-07-08?event_type=1206&coach=0&activity_id=0&member_id_filter=0&embedded=1&planner_type=0&show_personnel_schedule=&in_app=0&single_club=0&pref_club=42693"
 OUTPUT_FILE = "docs/swim.ics"
 
 def parse_time_range(start_end_str):
