@@ -5,47 +5,54 @@ from datetime import datetime, timedelta
 import re
 import os
 
-URL = "https://prospect-park-ymca.virtuagym.com/classes/week/2025-07-08?event_type=1206&coach=0&activity_id=0&member_id_filter=0&embedded=1&planner_type=0&show_personnel_schedule=&in_app=0&single_club=0&pref_club=42693"
+BASE_URL = "https://prospect-park-ymca.virtuagym.com/classes/week/{date_str}?event_type=1206&embedded=1&pref_club=42693"
 OUTPUT_FILE = "docs/swim.ics"
 
-def parse_time_range(start_end_str):
-    start_str, end_str = start_end_str.split("-")
-    start = datetime.strptime(start_str.strip(), "%I:%M %p")
-    end = datetime.strptime(end_str.strip(), "%I:%M %p")
-    return start.time(), end.time()
+calendar = Calendar()
 
-def fetch_swim_events():
-    response = requests.get(URL)
+# Loop over 4 weeks ahead
+for week_offset in range(4):
+    start_date = datetime.today() + timedelta(weeks=week_offset)
+    date_str = start_date.strftime("%Y-%m-%d")
+    url = BASE_URL.format(date_str=date_str)
+
+    print(f"Fetching: {url}")
+    response = requests.get(url)
     soup = BeautifulSoup(response.text, "html.parser")
 
-    calendar = Calendar()
-
-    # Each swim event is in a <div> with a classname and time
-    for div in soup.find_all("div", class_=re.compile("internal-event-day")):
-        class_name = div.find("span", class_="classname").text.strip()
-        time_range = div.find("span", class_="time").text.strip()
-
-        # Extract date from the class name: internal-event-day-DD-MM-YYYY
-        date_match = re.search(r"internal-event-day-(\d{2})-(\d{2})-(\d{4})", div["class"][-1])
+    for div in soup.find_all("div", class_=re.compile(r"internal-event-day-\d{2}-\d{2}-\d{4}")):
+        date_match = re.search(r"internal-event-day-(\d{2})-(\d{2})-(\d{4})", div["class"][1])
         if not date_match:
             continue
-        day, month, year = map(int, date_match.groups())
-        start_time, end_time = parse_time_range(time_range)
+        day, month, year = date_match.groups()
+        event_date = f"{year}-{month}-{day}"
 
-        start_dt = datetime(year, month, day, start_time.hour, start_time.minute)
-        end_dt = datetime(year, month, day, end_time.hour, end_time.minute)
+        name_tag = div.find("span", class_="classname")
+        time_tag = div.find("span", class_="time")
+        if not name_tag or not time_tag:
+            continue
+
+        name = name_tag.get_text(strip=True)
+        time_range = time_tag.get_text(strip=True)
+
+        try:
+            start_time_str, end_time_str = [t.strip() for t in time_range.split("-")]
+            start_dt = datetime.strptime(f"{event_date} {start_time_str}", "%Y-%m-%d %I:%M %p")
+            end_dt = datetime.strptime(f"{event_date} {end_time_str}", "%Y-%m-%d %I:%M %p")
+        except ValueError:
+            continue  # Skip malformed times
 
         e = Event()
-        e.name = class_name
+        e.name = name
         e.begin = start_dt
         e.end = end_dt
         calendar.events.add(e)
 
-    return calendar
+# Ensure output folder exists
+os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
 
-if __name__ == "__main__":
-    os.makedirs("docs", exist_ok=True)
-    cal = fetch_swim_events()
-    with open(OUTPUT_FILE, "w") as f:
-        f.writelines(cal)
-    print(f"✅ Calendar saved to {OUTPUT_FILE}")
+# Write to .ics
+with open(OUTPUT_FILE, "w") as f:
+    f.writelines(calendar)
+
+print(f"✅ Saved {len(calendar.events)} events to {OUTPUT_FILE}")
